@@ -1,82 +1,86 @@
 import { fetchImages } from './js/pixabay-api.js';
-import { renderImages, clearGallery } from './js/render-functions.js';
+import { renderGallery, showInfo, showError } from './js/render-functions.js';
 
-const form = document.querySelector('#search-form');
-const loadMoreBtn = document.querySelector('.load-more');
-const loader = document.querySelector('.loader');
+import iziToast from 'izitoast';
+import 'izitoast/dist/css/iziToast.min.css';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+import axios from 'axios';
 
-let query = '';
+const form = document.getElementById('search-form');
+const gallery = document.querySelector('.gallery');
+const loader = document.getElementById('loader');
+let lightbox = new SimpleLightbox('.gallery a');
+
+const loadMoreButton = document.getElementById('load-more');
+
 let page = 1;
-let totalHits = 0;
+let searchQuery = '';
 
-form.addEventListener('submit', onSearch);
-loadMoreBtn.addEventListener('click', onLoadMore);
+loader.classList.add('is-hidden');
 
-async function onSearch(event) {
+form.addEventListener('submit', async event => {
   event.preventDefault();
-  query = event.currentTarget.elements.searchQuery.value.trim();
 
-  if (!query) {
-    alert('Please enter a search query');
+  searchQuery = event.currentTarget.elements.searchQuery.value.trim();
+  page = 1;
+
+  if (!searchQuery) {
+    showError('Please enter a search term.');
     return;
   }
 
-  page = 1;
-  clearGallery();
-  toggleLoader(true);
-  toggleLoadMoreBtn(false);
+  gallery.innerHTML = '';
+  loadMoreButton.classList.add('hidden');
 
+  // console.log('Adding is-hidden to loader');
+  loader.classList.remove('is-hidden');
+
+  await loadImages();
+
+  // console.log('Removing is-hidden from loader');
+  loader.classList.add('is-hidden');
+});
+
+async function loadImages() {
   try {
-    const data = await fetchImages(query, page);
-    totalHits = data.totalHits;
+    const data = await fetchImages(searchQuery, page);
+    renderGallery(data.hits);
+    lightbox.refresh();
+    toggleLoadMoreButton(data.hits.length);
 
-    if (data.hits.length === 0) {
-      alert('No images found');
-    } else {
-      renderImages(data.hits);
-      if (totalHits > page * 15) {
-        toggleLoadMoreBtn(true);
-      }
+    if (page * 15 >= data.totalHits) {
+      showInfo("We're sorry, but you've reached the end of search results.");
+      loadMoreButton.classList.add('hidden');
     }
   } catch (error) {
-    console.error('Error:', error.message);
-  } finally {
-    toggleLoader(false);
+    showError('Failed to load images.');
   }
 }
 
-async function onLoadMore() {
+function toggleLoadMoreButton(resultsCount) {
+  if (resultsCount < 15) {
+    loadMoreButton.classList.add('hidden');
+  } else {
+    loadMoreButton.classList.remove('hidden');
+  }
+}
+
+loadMoreButton.addEventListener('click', async () => {
   page += 1;
-  toggleLoader(true);
+  loader.classList.remove('is-hidden');
+  await loadImages();
+  loader.classList.add('is-hidden');
+  scrollPage();
+});
 
-  try {
-    const data = await fetchImages(query, page);
-    const oldScrollPosition = window.scrollY;
-    renderImages(data.hits);
+function scrollPage() {
+  const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
 
-    const gallery = document.querySelector('.gallery');
-    const newScrollPosition = gallery.scrollHeight;
-
-    window.scrollTo({
-      top: oldScrollPosition + (newScrollPosition - oldScrollPosition),
-      behavior: 'smooth',
-    });
-
-    if (page * 15 >= totalHits) {
-      toggleLoadMoreBtn(false);
-      alert("You've reached the end of search results");
-    }
-  } catch (error) {
-    console.error('Error:', error.message);
-  } finally {
-    toggleLoader(false);
-  }
-}
-
-function toggleLoader(show) {
-  loader.classList.toggle('hidden', !show);
-}
-
-function toggleLoadMoreBtn(show) {
-  loadMoreBtn.classList.toggle('hidden', !show);
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
 }

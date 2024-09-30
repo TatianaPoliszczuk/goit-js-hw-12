@@ -2,29 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><goit-js-hw-12></goit-js-hw-12></title>
+    <title>goit-js-hw-12</title>
     <link rel="stylesheet" href="./css/styles.css" />
   </head>
-
   <body>
-    <header>
-      <form id="search-form" class="search-form">
-        <input
-          type="text"
-          name="searchQuery"
-          placeholder="Search images..."
-          required
-        />
-        <button type="submit" class="btn-search">Search</button>
-      </form>
-    </header>
+    <form id="search-form" class="search-form">
+      <input
+        class="input-btn"
+        type="text"
+        name="searchQuery"
+        autocomplete="off"
+        placeholder="Search images..."
+      />
+      <button type="submit">Search</button>
+    </form>
 
-    <main>
-      <div class="loader hidden">Loading...</div>
-      <ul class="gallery"></ul>
-      <button class="load-more hidden">Load more</button>
-    </main>
+    <ul class="gallery"></ul>
+
+    <div id="loader" class="loader is-hidden"></div>
+
+    <button id="load-more" class="load-more hidden">Load more</button>
 
     <script type="module" src="./main.js"></script>
   </body>
